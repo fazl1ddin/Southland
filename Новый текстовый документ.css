@@ -1,0 +1,764 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@100;200;300;400;500;600;700;800;900&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+}
+.nav {
+    background-image: url("img/v.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.window {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+}
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    height: 70px;
+}
+.navbar .navmenu ul {
+    display: flex;
+    justify-content: space-evenly;
+    line-height: 70px;
+}
+.navbar .navmenu ul li {
+    list-style-type: none;
+    display: inline-block;
+    margin-left: 30px;
+}
+.navbar .navmenu ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    font-family: 'Open Sans', sans-serif;
+}
+.navbar .language {
+    line-height: 70px;
+}
+.navbar .language a {
+    width: 130px;
+    background-color: black;
+    padding: 15px 10px;
+    text-decoration: none;
+    color: white;
+    margin-right: 15px;
+    letter-spacing: 1px;
+    font-weight: 100;
+    font-size: 12px;
+    font-family: 'Open Sans', sans-serif;
+}
+.navbar .language select {
+    border: none;
+    background: none;
+}
+.header {
+    background-image: url("img/Rectangle.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 700px;
+}
+.hdSlider {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 700px;
+    overflow: hidden;
+}
+.hdSlider img.none {
+    display: none;
+}
+.hdSlider img.this {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 700px;
+    display: block;
+}
+.hdSliderText {
+    position: absolute;
+    left: 50%;
+    margin-left: -295px;
+    margin-bottom: 80px;
+    padding-top: 260px;
+    text-align: center;
+    font-family: 'Open Sans', sans-serif;
+}
+.hdSliderText h1 {
+    width: 470px;
+    margin: 0 auto;
+    font-size: 30px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 2px;
+    padding-bottom: 20px;
+}
+.hdSliderText h1::before {
+    content: "НОВЫЙ ";
+    color: orange;
+}
+.hdSliderText p {
+    width: 590px;
+    margin: 0 auto;
+    font-size: 14px;
+    color: white;
+    font-style: italic;
+    font-weight: 200;
+    letter-spacing: 1px;
+    line-height: 150%;
+    padding-bottom: 35px;
+}
+.hdSliderText a {
+    padding: 10px 40px;
+    background-color: orange;
+    display: inline-block;
+    text-decoration: none;
+    color: white;
+    font-weight: bolder;
+    letter-spacing: 1.5px;
+    border-radius: 5px;
+}
+.dots {
+    position: absolute;
+    left: 50%;
+    top: 641px;
+    margin-left: -52.5px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 50px;
+}
+.dots .dot {
+    width: 10px;
+    height: 10px;
+    background-image: url("img/Ellipse3copy.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin: 2.5px 5px;
+    cursor: pointer;
+}
+.dots .dot.active {
+    width: 15px;
+    height: 15px;
+    background-image: url("img/Ellipse.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin: 0 5px;
+}
+.mainProjects {
+    background-color: white;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainProjectsText {
+    text-align: center;
+}
+.mainProjectsText h1 {
+    font-size: 30px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: -1px;
+    padding-top: 60px;
+}
+.mainProjectsText h1::before {
+    content: "Наши ";
+    font-weight: bolder;
+}
+.mainProjectsText .border {
+    width: 80px;
+    height: 3px;
+    background-color: orange;
+    border-radius: 2px;
+    margin: 20px auto;
+}
+.mainProjectsText p {
+    font-size: 14px;
+    font-family: 'Open Sans', sans-serif;
+    color: rgb(153, 153, 153);
+    width: 700px;
+    margin: 0 auto;
+    line-height: 180%;
+    padding-bottom: 50px;
+}
+.mainProjectsContent {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.mainProjectsContent .mainProjectsBox {
+    width: 570px;
+    height: 330px;
+    text-align: center;
+    background-color: rgb(131, 131, 131);
+    margin: 0 15px 30px;
+    position: relative;
+}
+.mainProjectsContent .mainProjectsBox.a {
+    background-image: url("img/Rectangle1.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainProjectsContent .mainProjectsBox.b {
+    background-image: url("img/Rectangle4.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainProjectsContent .mainProjectsBox.c {
+    background-image: url("img/Rectangle2.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainProjectsContent .mainProjectsBox.d {
+    background-image: url("img/Rectangle3.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainProjectsContent .mainProjectsBox h3 {
+    font-size: 22px;
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    line-height: 330px;
+}
+.mainProjectsContent .mainProjectsBox .adress {
+    position: absolute;
+    top: 290px;
+    left: 50%;
+    width: 215px;
+    margin-left: -107.5px;
+    text-align: center;
+    line-height: 31px;
+    display: flex;
+    justify-content: space-between;
+}
+.mainProjectsContent .mainProjectsBox .adress p {
+    font-size: 14px;
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    text-align: center;
+}
+.btnAllProjects {
+    text-align: center;
+    margin: 0 auto;
+    width: 170px;
+    padding: 18px 0px;
+    background-color: orange;
+    border-radius: 2px;
+    text-decoration: none;
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 30px;
+}
+.mainAboutCompany {
+    background-image: url("img/Rectangle26.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainAbout {
+    display: flex;
+    justify-content: space-between;
+}
+.mainAbout .mainAboutText {
+    text-align: left;
+    margin: 35px 0 65px 0;
+}
+.mainAbout .mainAboutText h2 {
+    font-family: "Open Sans", sans-serif;
+    width: 140px;
+    font-weight: 500;
+    padding-bottom: 20px;
+}
+.mainAbout .mainAboutText h2::before {
+    content: "О Нашей ";
+    font-weight: bolder;
+}
+.mainAbout .mainAboutText .border {
+    width: 80px;
+    height: 3px;
+    background-color: orange;
+    border-radius: 2px;
+    margin-bottom: 25px;
+}
+.mainAbout .mainAboutText p {
+    width: 600px;
+    font-size: 13px;
+    font-family: "Open Sans", sans-serif;
+    line-height: 150%;
+    padding-bottom: 40px;
+}
+.mainAbout .mainAboutText .p {
+    padding-bottom: 30px;
+}
+.mainAbout .mainAboutText a {
+    width: 140px;
+    text-align: center;
+    padding: 15px 0px;
+    background-color: orange;
+    border-radius: 2px;
+    text-decoration: none;
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+}
+.mainAbout .mainAboutPic {
+    margin-top: 30px;
+    margin-bottom: 65px;
+    height: 385px;
+}
+.mainBenefits {
+    background-image: url("img/Rectangle26copy.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.mainBenefits .mainBenefitsContent {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+.mainBenefits .mainBenefitsBox {
+    width: 370px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+    margin-bottom: 45px;
+}
+.mainBenefits .mainBenefitsBox.two {
+    margin-top: 0;
+}
+.mainBenefits .mainBenefitsBox .mainBenefitsBoxText {
+    font-family: "Open Sans", sans-serif;
+    color: white;
+    text-align: left;
+
+}
+.mainBenefits .mainBenefitsBox .mainBenefitsBoxText h4 {
+    font-size: 15px;
+    padding-bottom: 25px;
+    letter-spacing: 1px;
+    line-height: 180%;
+    margin-top: -8px;
+}
+.mainBenefits .mainBenefitsBox .mainBenefitsBoxText p {
+    line-height: 180%;
+    font-size: 14px;
+    margin-top: -6px;
+}
+.mainBenefits .mainBenefitsBox .mainBenefitsBoxPic {
+    padding-right: 25px;
+}
+.mainHard {
+    background-color: white;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainHard h1 {
+    text-align: center;
+    font-size: 30px;
+    padding-top: 50px;
+    padding-bottom: 65px;
+    color: orange;
+    display: block;
+    font-family: "Raleway", sans-serif;
+}
+.mainHardContent {
+    display: flex;
+    justify-content: space-between;
+}
+.mainHardContent .mainHardBox {
+    position: relative;
+}
+.mainHardContent .mainHardBox .mainHardInBox {
+    position: absolute;
+    top: 250px;
+    left: 25px;
+    right: 25px;
+    text-align: left;
+}
+.mainHardContent .mainHardBox .mainHardInBox h2 {
+    padding-top: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #808080d2;
+    border-radius: 2px;
+    font-family: "Raleway", sans-serif;
+    font-size: 25px;
+    font-weight: 300;
+}
+.mainHardContent .mainHardBox .mainHardInBox h2.orange {
+    color: orange;
+}
+.mainHardContent .mainHardBox .mainHardInBox p {
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding-top: 40px;
+    padding-bottom: 60px;
+    line-height: 100%;
+}
+.mainHardContent .mainHardBox .mainHardInBox .calendar {
+    display: flex;
+    height: 13px;
+}
+.mainHardContent .mainHardBox .mainHardInBox .calendar img {
+    width: 11px;
+    height: 13px;
+    margin-right: 10px;
+}
+.mainHardContent .mainHardBox .mainHardInBox .calendar p {
+    padding: 0;
+    line-height: 13px;
+    font-size: 13px;
+    color: #a5a5a5;
+}
+.mainHard a {
+    margin: 40px auto 30px;
+    width: 140px;
+    text-align: center;
+    padding: 15px 0px;
+    background-color: orange;
+    border-radius: 2px;
+    text-decoration: none;
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+}
+.mainFeedbackContent {
+    display: flex;
+    justify-content: center;
+    width: 90%;
+    margin: 0 auto;
+}
+.mainFeedbackContent .mainFeedbackText {
+    text-align: left;
+    font-family: "Raleway", sans-serif;
+    width: 50%;
+}
+.mainFeedbackContent .mainFeedbackText h2 {
+    font-size: 20px;
+    color: #323232;
+    padding-top: 100px;
+    font-weight: 300;
+}
+.mainFeedbackContent .mainFeedbackText h1 {
+    font-size: 30px;
+    padding-bottom: 25px;
+}
+.mainFeedbackContent .mainFeedbackText .border {
+    width: 80px;
+    height: 10px;
+    background-color: orange;
+    border-radius: 2px;
+    margin-bottom: 100px;
+}
+.mainFeedbackContent .mainFeedbackContentBox {
+    width: 50%;
+    background-image: url("img/Rectangle14copy23.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider {
+    overflow: hidden;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex {
+    text-align: center;
+    border-radius: 2px;
+    margin-top: 30px;
+    display: none;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex.visa {
+    display: block;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex img {
+    display: block;
+    margin: 30px auto 20px;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex p {
+    font-family: "Raleway", sans-serif;
+    text-align: center;
+    margin: 0 30px;
+    font-size: 15px;
+    color: #777463;
+    line-height: 150%;
+    padding-bottom: 35px;
+    padding-top: 15px;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex p.tonyName {
+    font-weight: 900;
+    line-height: normal;
+    color: #363636;
+    padding-bottom: 15px;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex .rating {
+    display: flex;
+    justify-content: center;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackSlaider .mainFeedbackContentBoxex .rating img {
+    margin: 0;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackButtons {
+    display: flex;
+    justify-content: center;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackButtons .bullet {
+    margin: 0 7.5px 30px;
+    background-image: url("img/bullet1.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    height: 5px;
+    width: 27px;
+}
+.mainFeedbackContent .mainFeedbackContentBox .mainFeedbackButtons .bullet.actic {
+    background-image: url("img/bullet2active.png");
+}
+.mainGaleryTitle {
+    text-align: center;
+    font-family: "Open Sans", sans-serif;
+    margin-top: 70px;
+}
+.mainGaleryTitle h1 {
+    font-size: 30px;
+    padding-bottom: 15px;
+    font-weight: 600;
+}
+.mainGaleryTitle .border {
+    width: 130px;
+    height: 3px;
+    background-color: orange;
+    border-radius: 2px;
+    margin: 0 auto;
+    margin-bottom: 20px;
+}
+.mainGaleryTitle p {
+    width: 700px;
+    text-align: center;
+    margin: 0 auto;
+    font-size: 14px;
+    font-weight: 400;
+    color: #999999;
+    padding-bottom: 50px;
+}
+.mainGaleryContent {
+    display: flex;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding-bottom: 30px;
+}
+.mainGaleryContent .mainGaleryContentBox {
+    display: block;
+    order: 4;
+}
+.mainGaleryContent .mainGaleryContentBox.start {
+    order: 1;
+    margin-left: 37px;
+}
+.mainGaleryContent .mainGaleryContentBox.middle {
+    order: 2;
+    margin: auto 37px;
+    box-shadow: 0 0 10px 5px #7c7c7c;
+}
+.mainGaleryContent .mainGaleryContentBox.end {
+    order: 3;
+    margin-right: 37px;
+}
+.prev {
+    position: absolute;
+    top: 386px;
+    left: -72px;
+    display: block;
+}
+.next {
+    position: absolute;
+    top: 386px;
+    right: -72px;
+    display: block;
+}
+.contacts {
+    background-image: url("img/Background.png");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.contacts h1 {
+    display: block;
+    color: white;
+    font-size: 30px;
+    padding-top: 50px;
+    font-family: "Relaway", sans-serif;
+    width: 700px;
+    padding-bottom: 70px;
+}
+.contactsContent {
+    display: flex;
+    justify-content: space-between;
+}
+.contactsContent .contactsAdress {
+    font-family: "Open Sans", sans-serif;
+    color: white;
+    padding-bottom: 85px;
+    padding-top: 50px;
+}
+.contactsContent .contactsAdress .icons {
+    display: flex;
+    padding-bottom: 35px;
+}
+.contactsContent .contactsAdress .icons p {
+    width: 220px;
+    line-height: 170%;
+}
+.contactsContent .contactsAdress .icons .icon img {
+    margin: 10px 0;
+}
+.contactsContent .contactsAsk {
+    margin-right: 70px;
+}
+.contactsContent .contactsAsk p {
+    font-size: 18px;
+    text-transform: uppercase;
+    font-family: "Open Sans", sans-serif;
+    color: orange;
+    display: block;
+    padding-bottom: 20px;
+    font-weight: 700;
+}
+.contactsContent .contactsAsk form {
+    display: flex;
+    justify-content: space-between;
+}
+.contactsContent .contactsAsk .littleInputs {
+    margin-right: 30px;
+}
+.contactsContent .contactsAsk form .littleInputs input[type="text"], input[type="email"] {
+    width: 275px;
+    height: 51px;
+    padding: 20px 0;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 5px;
+    display: block;
+    margin-bottom: 25px;
+}
+.contactsContent .contactsAsk form .littleInputs input[type="text"], input[type="email"]::placeholder {
+    padding-left: 10px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.contactsContent .contactsAsk form .bigInputs textarea {
+    width: 400px;
+    height: 200px;
+    box-sizing: border-box;
+    display: block;
+    border: none;
+    border-radius: 5px;
+}
+.contactsContent .contactsAsk form .bigInputs textarea::placeholder {
+    padding-left: 20px;
+    padding-top: 20px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.contactsContent .contactsAsk form .bigInputs input[type="submit"] {
+    width: 240px;
+    padding: 15px 0px;
+    background-color: orange;
+    border-radius: 5px;
+    font-family: 'Relaway', sans-serif;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: block;
+    float: right;
+    margin-top: 30px;
+    border: none;
+}
+.footer {
+    background-image: url("img/Layer51.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.footbar {
+    display: flex;
+    justify-content: space-between;
+    height: 70px;
+    padding-top: 10px;
+}
+.footbar .footlogo {
+    padding-left: 5px;
+}
+.footbar .footmenu ul {
+    display: flex;
+    justify-content: space-evenly;
+    line-height: 70px;
+}
+.footbar .footmenu ul li {
+    list-style-type: none;
+    display: inline-block;
+    margin-right: 32px;
+}
+.footbar .footmenu ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 13px;
+    font-family: 'Open Sans', sans-serif;
+    text-transform: uppercase;
+}
+.footbar .social {
+    line-height: 70px;
+}
+.footbar .social a {
+    text-decoration: none;
+    margin-right: 15px;
+}
+.footInfo {
+    display: flex;
+    justify-content: space-between;
+    color: #a5a5a5;
+    font-size: 12px;
+    font-family: "Open Sans", sans-serif;
+    padding-bottom: 10px;
+    padding-top: 45px;
+}
+.footInfo p {
+    display: block;
+    padding-left: 5px;
+}
+.footInfo .footInfoCompany {
+    display: flex;
+    padding-right: 5px;
+}
+.footInfo .footInfoCompany img {
+    margin-right: 10px;
+}
