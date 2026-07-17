@@ -22,14 +22,63 @@
   var dotEls = [];
 
   var ADJ_LABEL = { warmth: 'Тепло света', brightness: 'Яркость', contrast: 'Контраст', saturation: 'Насыщенность' };
+  var ADJ_DIR = {
+    warmth: ['теплее', 'холоднее'], brightness: ['светлее', 'темнее'],
+    contrast: ['выше', 'мягче'], saturation: ['сочнее', 'пастельнее']
+  };
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
   /* ---------- обёртки над смежными модулями: их сбой не должен ронять приложение ---------- */
 
-  function refLabels() {
-    return state.refinements.map(function (r) { return r.label; });
+  /* Чипы «текущее состояние правок»: refinements — это ИСТОРИЯ (для undo),
+   * поэтому для показа сводим её к эффективному набору: последняя перекраска
+   * по каждой зоне, суммарная дельта по каждому параметру, растения один раз. */
+  function effectiveChips() {
+    var chips = [], recolor = {}, adjust = {}, order = [], plants = false;
+    state.refinements.forEach(function (r) {
+      if (r.type === 'recolor') {
+        if (!recolor[r.target]) order.push({ k: 'rc:' + r.target });
+        recolor[r.target] = r;
+      } else if (r.type === 'adjust') {
+        if (adjust[r.param] === undefined) order.push({ k: 'aj:' + r.param });
+        adjust[r.param] = (adjust[r.param] || 0) + (r.delta || 0);
+      } else if (r.type === 'plants' && !plants) {
+        plants = true;
+        order.push({ k: 'pl' });
+      }
+    });
+    order.forEach(function (o) {
+      if (o.k === 'pl') { chips.push('Растения: добавлены'); return; }
+      var id = o.k.slice(3);
+      if (o.k.indexOf('rc:') === 0) {
+        if (recolor[id]) chips.push(recolor[id].label);
+      } else {
+        var net = adjust[id];
+        if (Math.abs(net) < 0.001) return; /* «теплее» + «холоднее» = ничего */
+        chips.push(ADJ_LABEL[id] + ': ' + ADJ_DIR[id][net >= 0 ? 0 : 1]);
+      }
+    });
+    return chips;
+  }
+
+  /* Суммарная дельта adjust по параметру */
+  function adjustNet(param) {
+    var net = 0;
+    state.refinements.forEach(function (r) {
+      if (r.type === 'adjust' && r.param === param) net += (r.delta || 0);
+    });
+    return net;
+  }
+
+  /* Эффективная перекраска зоны (последняя по target) */
+  function effectiveRecolor(target) {
+    for (var i = state.refinements.length - 1; i >= 0; i--) {
+      var r = state.refinements[i];
+      if (r.type === 'recolor' && r.target === target) return r;
+    }
+    return null;
   }
 
   function suggest(items, color) {
@@ -144,6 +193,13 @@
   function finishOverlay() {
     $('overlay').classList.remove('on');
     $('overlayBar').style.transform = 'scaleX(0)'; // оверлей скрыт — вернём бар без анимации
+    if (!state._result) {
+      /* рендер упал — не бросаем пользователя в пустую студию */
+      document.body.dataset.stage = 'empty';
+      state.src = null;
+      upError('Не получилось обработать это фото — попробуйте другое изображение');
+      return;
+    }
     var styles = $('styles');
     if (styles) styles.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (!greeted) {
@@ -306,37 +362,61 @@
         if (!state.src) return;
         if (!a.hex) { botReply(a); break; } // мишень без цвета — chat переспросит
         var t = a.target || 'all';
-        var tLabel = t === 'all' ? 'Вся комната' : (SL.TARGETS[t] ? SL.TARGETS[t].label : t);
-        var ref = {
-          type: 'recolor', target: t, hex: a.hex, colorName: a.colorName,
-          label: tLabel + ': ' + (a.colorName || a.hex)
-        };
-        var found = -1;
-        for (var i = 0; i < state.refinements.length; i++) {
-          if (state.refinements[i].type === 'recolor' && state.refinements[i].target === t) { found = i; break; }
-        }
-        if (found >= 0) state.refinements[found] = ref; else state.refinements.push(ref);
-        rerender();
+        var tLabel = t === 'all' ? 'Вся сцена' : (SL.TARGETS[t] ? SL.TARGETS[t].label : t);
+        var eff = effectiveRecolor(t);
         var items = (t !== 'all' && SL.TARGETS[t]) ? [SL.TARGETS[t].item] : undefined;
-        botReply(a, { chips: refLabels(), products: suggest(items, { name: a.colorName, hex: a.hex }) });
+        if (eff && eff.hex === a.hex) {
+          /* зона уже этого цвета — не гоняем рендер впустую */
+          botReply(a, { chips: effectiveChips(), products: suggest(items, { name: a.colorName, hex: a.hex }) });
+          break;
+        }
+        /* правки — история: только push, undo снимает именно последнюю */
+        state.refinements.push({
+          type: 'recolor', target: t, hex: a.hex, colorName: a.colorName,
+          label: a.label || (tLabel + ': ' + (a.colorName || a.hex))
+        });
+        rerender();
+        botReply(a, { chips: effectiveChips(), products: suggest(items, { name: a.colorName, hex: a.hex }) });
         break;
       }
 
       case 'adjust': {
         if (!a.param) break;
-        var label = a.label || (ADJ_LABEL[a.param] || a.param) + (a.delta >= 0 ? ': больше' : ': меньше');
-        var ex = null;
-        for (var j = 0; j < state.refinements.length; j++) {
-          if (state.refinements[j].type === 'adjust' && state.refinements[j].param === a.param) { ex = state.refinements[j]; break; }
+        /* суммарная дельта капится на ±0.5; сохраняем фактический шаг,
+         * чтобы undo снимал ровно один шаг истории */
+        var net = adjustNet(a.param);
+        var effDelta = clamp(net + (a.delta || 0), -0.5, 0.5) - net;
+        if (Math.abs(effDelta) < 0.005) {
+          botReply({ type: 'adjust', param: a.param, delta: a.delta, capped: true, text: a.text });
+          break;
         }
-        if (ex) { // повторные правки одного параметра складываются
-          ex.delta = clamp(ex.delta + (a.delta || 0), -0.5, 0.5);
-          ex.label = label;
-        } else {
-          state.refinements.push({ type: 'adjust', param: a.param, delta: clamp(a.delta || 0, -0.5, 0.5), label: label });
-        }
+        state.refinements.push({
+          type: 'adjust', param: a.param, delta: effDelta,
+          label: a.label || (ADJ_LABEL[a.param] || a.param) + (effDelta >= 0 ? ': больше' : ': меньше')
+        });
         rerender();
-        botReply(a, { chips: refLabels() });
+        botReply(a, { chips: effectiveChips() });
+        break;
+      }
+
+      case 'remove': {
+        if (!state.src) return;
+        var ri = -1;
+        for (var k = state.refinements.length - 1; k >= 0; k--) {
+          var rr = state.refinements[k];
+          if (a.what === 'plants') {
+            if (rr.type === 'plants') { ri = k; break; }
+          } else if (rr.type === 'recolor') {
+            if (a.target ? rr.target === a.target : (!a.colorName || rr.colorName === a.colorName)) { ri = k; break; }
+          }
+        }
+        if (ri < 0) {
+          botReply({ type: 'remove', what: a.what, colorName: a.colorName, target: a.target, nothing: true, text: a.text });
+          break;
+        }
+        state.refinements.splice(ri, 1);
+        rerender();
+        botReply(a, { chips: effectiveChips() });
         break;
       }
 
@@ -346,9 +426,11 @@
 
       case 'plants': {
         var has = state.refinements.some(function (r) { return r.type === 'plants'; });
-        if (!has) state.refinements.push({ type: 'plants', label: 'Растения: добавлены' });
-        rerender();
-        botReply(a, { chips: refLabels(), products: suggest(['plant']) });
+        if (!has) {
+          state.refinements.push({ type: 'plants', label: 'Растения: добавлены' });
+          rerender();
+        }
+        botReply(a, { chips: effectiveChips(), products: suggest(['plant']) });
         break;
       }
 
@@ -359,12 +441,20 @@
       }
 
       case 'undo':
+        if (!state.refinements.length) {
+          botReply({ type: 'undo', empty: true, text: a.text });
+          break;
+        }
         state.refinements.pop();
         rerender();
-        botReply(a, { chips: refLabels() });
+        botReply(a, { chips: effectiveChips() });
         break;
 
       case 'reset':
+        if (!state.refinements.length && state.seed === 1) {
+          botReply(a); /* и так исходное состояние — рендер не нужен */
+          break;
+        }
         state.refinements = [];
         state.seed = 1;
         rerender();
@@ -378,6 +468,10 @@
         break;
 
       case 'download':
+        if (!state._result) {
+          botReply({ type: 'download', failed: true, text: a.text });
+          break;
+        }
         doDownload();
         botReply(a);
         break;
@@ -420,29 +514,34 @@
       text: 'Мой новый интерьер от Southland',
       url: location.href
     };
-    if (navigator.share) {
-      if (state._result && state._result.toBlob && navigator.canShare) {
-        state._result.toBlob(function (blob) {
-          var shared = false;
-          if (blob) {
-            var file = new File([blob], 'southland-' + state.styleId + '.png', { type: 'image/png' });
-            if (navigator.canShare({ files: [file] })) {
-              navigator.share({ files: [file], title: meta.title }).catch(function () { /* отмена — не ошибка */ });
-              shared = true;
-            }
-          }
-          if (!shared) navigator.share(meta).catch(function () { /* отмена — не ошибка */ });
-        }, 'image/png');
+    // цепочка фолбэков: share с файлом → share с текстом → адрес в буфер.
+    // AbortError — это отмена пользователем, по ней дальше не падаем.
+    var copyFallback = function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(meta.url).then(flash, flash);
       } else {
-        navigator.share(meta).catch(function () { /* отмена — не ошибка */ });
+        flash();
       }
-      return;
-    }
-    // фолбэк: адрес страницы в буфер обмена + мигнуть кнопкой
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(meta.url).then(flash, flash);
+    };
+    var shareMeta = function () {
+      navigator.share(meta).catch(function (err) {
+        if (!err || err.name !== 'AbortError') copyFallback();
+      });
+    };
+    if (!navigator.share) { copyFallback(); return; }
+    if (state._result && state._result.toBlob && navigator.canShare) {
+      state._result.toBlob(function (blob) {
+        var file = blob && new File([blob], 'southland-' + state.styleId + '.png', { type: 'image/png' });
+        if (file && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: meta.title }).catch(function (err) {
+            if (!err || err.name !== 'AbortError') shareMeta();
+          });
+        } else {
+          shareMeta();
+        }
+      }, 'image/png');
     } else {
-      flash();
+      shareMeta();
     }
   }
 

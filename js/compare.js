@@ -7,10 +7,11 @@
 
   var cmp = null, cvBefore = null, cvAfter = null, range = null;
   var dragging = false;
+  var dragRect = null; /* rect кэшируется на время драга — без reflow на каждый move */
 
   /* Позиция разделителя из экранной координаты X */
   function posFromX(clientX) {
-    var r = cmp.getBoundingClientRect();
+    var r = dragRect || cmp.getBoundingClientRect();
     if (r.width <= 0) return;
     SL.compare.setPosition((clientX - r.left) / r.width * 100);
   }
@@ -45,14 +46,18 @@
       cmp.addEventListener('pointerdown', function (e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         dragging = true;
+        dragRect = cmp.getBoundingClientRect();
         try { cmp.setPointerCapture(e.pointerId); } catch (err) { /* не критично */ }
         posFromX(e.clientX);
       });
       cmp.addEventListener('pointermove', function (e) {
+        /* если capture не встал и pointerup ушёл мимо — кнопки отпущены, драг снят */
+        if (dragging && e.pointerType === 'mouse' && e.buttons === 0) { dragging = false; dragRect = null; return; }
         if (dragging) posFromX(e.clientX);
       });
       var stop = function (e) {
         dragging = false;
+        dragRect = null;
         try { cmp.releasePointerCapture(e.pointerId); } catch (err) { /* уже отпущен */ }
       };
       cmp.addEventListener('pointerup', stop);

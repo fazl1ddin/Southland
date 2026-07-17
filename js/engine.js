@@ -104,8 +104,8 @@
         return wFloorY * (1 - w1 * 0.85);
       case 4:                                             /* шторы у краёв */
         if (wCurtY <= 0) return 0;
-        w1 = 1 - sstep(0.10, 0.16, u);
-        w2 = sstep(0.84, 0.90, u);
+        w1 = 1 - sstep(0.085, 0.14, u);
+        w2 = sstep(0.86, 0.915, u);
         return (w1 > w2 ? w1 : w2) * wCurtY;
       case 5:                                             /* ковёр-эллипс */
         if (dRug2 >= 1) return 0;
@@ -170,29 +170,36 @@
     return g;
   }
 
-  /* Список перекрасок: accents стиля (strength 0.5) + recolor-правки (0.85);
-   * по каждой зоне действует только последний recolor. */
+  /* Список перекрасок: сначала accents стиля (strength 0.5, в ZONE_ORDER),
+   * затем recolor-правки строго В ПОРЯДКЕ ДЕЙСТВИЙ ПОЛЬЗОВАТЕЛЯ (0.85) —
+   * последовательное применение даёт естественную семантику «поздняя правка
+   * побеждает», в том числе зона поверх более раннего recolor 'all'.
+   * Accent зоны, которую пользователь перекрасил сам, пропускается. */
   function buildRecolors(style, refinements) {
-    var map = {}, t, i;
-    var acc = style.accents || {};
-    for (t in acc) if (ZONES[t] !== undefined) map[t] = { hex: acc[t], strength: 0.5 };
+    var list = [], userZones = {}, t, i, rf;
     for (i = 0; i < refinements.length; i++) {
-      var rf = refinements[i];
-      if (rf && rf.type === 'recolor' && rf.hex && ZONES[rf.target] !== undefined)
-        map[rf.target] = { hex: rf.hex, strength: 0.85 };
+      rf = refinements[i];
+      if (rf && rf.type === 'recolor' && ZONES[rf.target] !== undefined) userZones[rf.target] = true;
     }
-    var list = [];
-    for (i = 0; i < ZONE_ORDER.length; i++) {
-      t = ZONE_ORDER[i];
-      if (!map[t]) continue;
-      var rgb = hexToRgb(map[t].hex);
+    function push(target, hex, strength) {
+      var rgb = hexToRgb(hex);
       rgbToHsl(rgb[0], rgb[1], rgb[2], HSL_T);
       /* hueTrust: у почти серой цели тон не определён — тянем только насыщенность */
       var hueTrust = HSL_T[1] * 5; if (hueTrust > 1) hueTrust = 1;
       list.push({
-        zone: ZONES[t], h: HSL_T[0], s: HSL_T[1], l: HSL_T[2],
-        strength: map[t].strength, hueTrust: hueTrust
+        zone: ZONES[target], h: HSL_T[0], s: HSL_T[1], l: HSL_T[2],
+        strength: strength, hueTrust: hueTrust
       });
+    }
+    var acc = style.accents || {};
+    for (i = 0; i < ZONE_ORDER.length; i++) {
+      t = ZONE_ORDER[i];
+      if (acc[t] && ZONES[t] !== undefined && !userZones[t]) push(t, acc[t], 0.5);
+    }
+    for (i = 0; i < refinements.length; i++) {
+      rf = refinements[i];
+      if (rf && rf.type === 'recolor' && rf.hex && ZONES[rf.target] !== undefined)
+        push(rf.target, rf.hex, 0.85);
     }
     return list;
   }
@@ -235,7 +242,7 @@
     for (var yy = 0; yy < H; yy++) {
       var v = (yy + 0.5) * invH;
       /* построчные компоненты масок */
-      var wWalls = 1 - sstep(0.45, 0.62, v);
+      var wWalls = sstep(0.14, 0.24, v) * (1 - sstep(0.48, 0.68, v));
       var wCeil = 1 - sstep(0.08, 0.20, v);
       var wFloorY = sstep(0.68, 0.82, v);
       var wCurtY = 1 - sstep(0.69, 0.75, v);
@@ -306,7 +313,12 @@
 
   /* ── оверлеи: glow, виньетка, зерно, растения ─────────────────────── */
 
+  /* Шум зависит только от (size, seed) — кэшируем последний, чтобы не
+   * пересоздавать канвас на каждой правке из чата */
+  var noiseMemo = { size: 0, seed: 0, canvas: null };
+
   function noiseCanvas(size, seed) {
+    if (noiseMemo.canvas && noiseMemo.size === size && noiseMemo.seed === seed) return noiseMemo.canvas;
     var c = document.createElement('canvas');
     c.width = c.height = size;
     var ctx = c.getContext('2d');
@@ -319,6 +331,7 @@
       d[i + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
+    noiseMemo.size = size; noiseMemo.seed = seed; noiseMemo.canvas = c;
     return c;
   }
 
@@ -415,7 +428,7 @@
     var W = src.width, H = src.height;
     var out = document.createElement('canvas');
     out.width = W; out.height = H;
-    var ctx = out.getContext('2d');
+    var ctx = out.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(src, 0, 0);
 
     var g = effectiveGrade(style.grade, refinements);
@@ -434,7 +447,7 @@
     w = w || 208; h = h || 104;
     var c = document.createElement('canvas');
     c.width = w; c.height = h;
-    var ctx = c.getContext('2d');
+    var ctx = c.getContext('2d', { willReadFrequently: true });
 
     var sw = src.width, sh = src.height;
     var k = Math.max(w / sw, h / sh);

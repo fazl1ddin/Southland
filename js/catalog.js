@@ -9,6 +9,7 @@ window.SL = window.SL || {};
   /* djb2-хэш — единственный источник «случайности» */
   function hash(s) {
     var h = 5381;
+    s = String(s);
     for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
     return Math.abs(h);
   }

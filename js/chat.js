@@ -55,21 +55,51 @@ window.SL = window.SL || {};
     return COLOR_DEFS;
   }
 
-  /* Первый цвет в фразе: слово должно НАЧИНАТЬСЯ со стема и кончаться
-   * прилагательным окончанием — «синим» да, «апельсин»/«серьёзно» нет. */
-  function findColor(t) {
-    var words = t.match(/[а-яa-z]+/g) || [];
-    var defs = colorDefs();
-    for (var w = 0; w < words.length; w++) {
+  /* Все цвета фразы с позициями (по одному на оттенок): слово должно
+   * НАЧИНАТЬСЯ со стема и кончаться прилагательным окончанием —
+   * «синим» да, «апельсин»/«серьёзно» нет. */
+  function findColorsAll(t) {
+    var out = [], seen = {}, defs = colorDefs();
+    var re = /[а-яa-z]+/g, m;
+    while ((m = re.exec(t))) {
+      var word = m[0];
       for (var d = 0; d < defs.length; d++) {
         var st = defs[d].stem;
-        if (words[w].indexOf(st) === 0) {
-          var tail = words[w].slice(st.length);
-          if (tail && ADJ_END[tail]) return { name: defs[d].name, hex: defs[d].hex };
+        if (word.indexOf(st) === 0) {
+          var tail = word.slice(st.length);
+          if (tail && ADJ_END[tail]) {
+            if (!seen[defs[d].name]) {
+              seen[defs[d].name] = 1;
+              out.push({ name: defs[d].name, hex: defs[d].hex, pos: m.index });
+            }
+            break;
+          }
         }
       }
     }
-    return null;
+    return out;
+  }
+
+  function findColor(t) {
+    var c = findColorsAll(t);
+    return c.length ? { name: c[0].name, hex: c[0].hex } : null;
+  }
+
+  /* Позиции токенов отрицания: «не надо синий», «убери синий диван», «без золота» */
+  function negPositions(t) {
+    var out = [];
+    var re = /(^|[^а-яa-z])(не надо|не нужно|не хочу|убери(?:те)?|убрать|без)(?=[^а-яa-z]|$)/g, m;
+    while ((m = re.exec(t))) out.push(m.index + m[1].length);
+    return out;
+  }
+
+  /* Цвет считается отвергнутым, если токен отрицания стоит незадолго до него */
+  function isNegated(negs, pos) {
+    for (var i = 0; i < negs.length; i++) {
+      var d = pos - negs[i];
+      if (d > 0 && d <= 20) return true;
+    }
+    return false;
   }
 
   /* ---------- мишени (SL.TARGETS) ---------- */
@@ -84,11 +114,17 @@ window.SL = window.SL || {};
         var f = forms[i].toLowerCase().replace(/ё/g, 'е').trim();
         if (seen[f]) continue;
         seen[f] = 1;
-        if (f === 'пол' || f === 'пола' || f === 'полу') {
-          /* «пол/пола/полу» — только как отдельное слово, иначе ловит «получше» */
-          if (!seen['__пол']) { seen['__пол'] = 1; res.push(new RegExp(B + 'пол(а|у|ом|е)?([^а-яa-z]|$)')); }
-        } else if (f === 'соф') {
-          res.push(new RegExp(B + 'соф[аыуоей]'));
+        if (f.indexOf('пол') === 0 && f.length <= 4) {
+          /* «пол» — только как отдельное слово с падежными окончаниями,
+           * иначе ловит «получше»/«половину»; покрывает и мн. число «полы/полов» */
+          if (!seen['__пол']) { seen['__пол'] = 1; res.push(new RegExp(B + 'пол(а|у|ы|е|ом|ов|ам|ами|ах)?([^а-яa-z]|$)')); }
+        } else if (f === 'тюль') {
+          /* не путать с «тюльпанами» */
+          res.push(new RegExp(B + 'тюл(ь|я|ю|и|ем)([^а-яa-z]|$)'));
+        } else if (f.length <= 4) {
+          /* общее правило для коротких стемов: не больше трёх букв окончания,
+           * дальше — граница слова («соф»+«ой» да, «стол»→«столько» нет) */
+          res.push(new RegExp(B + regEsc(f) + '[а-яa-z]{0,3}(?=[^а-яa-z]|$)'));
         } else {
           res.push(new RegExp(B + regEsc(f)));
         }
@@ -99,8 +135,8 @@ window.SL = window.SL || {};
     return m;
   }
 
-  /* Все мишени фразы в порядке упоминания */
-  function findTargets(t) {
+  /* Все мишени фразы с позициями, в порядке упоминания */
+  function findTargetsPos(t) {
     var found = [], ms = targetMatchers();
     for (var i = 0; i < ms.length; i++) {
       var best = -1;
@@ -111,7 +147,11 @@ window.SL = window.SL || {};
       if (best >= 0) found.push({ id: ms[i].id, pos: best });
     }
     found.sort(function (a, b) { return a.pos - b.pos; });
-    return found.map(function (f) { return f.id; });
+    return found;
+  }
+
+  function findTargets(t) {
+    return findTargetsPos(t).map(function (f) { return f.id; });
   }
 
   function hasPronoun(t) {
@@ -152,13 +192,23 @@ window.SL = window.SL || {};
     return out;
   }
 
+  /* «Слабые» ключевые слова стилей — бытовые слова, которые переключают стиль
+   * только при явном контексте («в стиле…», «переключи…»): иначе «стены под
+   * кирпич» уводит в лофт, а «диван цвета морской волны» — в прибрежный. */
+  var WEAK_STYLE_KW = {
+    'кирпич': 1, 'морск': 1, 'этни': 1, 'ротанг': 1, 'макраме': 1,
+    'строг': 1, 'лаконичн': 1, 'дзен': 1, 'ваби': 1
+  };
+
   /* Стиль по keywords/имени/id */
   function findStyle(t) {
+    var styleCtx = /стил|в духе|как у|переключ|примерь|оформ/.test(t);
     for (var i = 0; i < SL.STYLES.length; i++) {
       var st = SL.STYLES[i];
       var kws = st.keywords.concat([st.id]);
       for (var k = 0; k < kws.length; k++) {
         var kw = kws[k].toLowerCase().replace(/ё/g, 'е');
+        if (WEAK_STYLE_KW[kw] && !styleCtx) continue;
         if (new RegExp(B + regEsc(kw)).test(t)) return st.id;
       }
     }
@@ -182,12 +232,16 @@ window.SL = window.SL || {};
 
       function add(intent) { intent.text = raw; intents.push(intent); }
 
-      /* служебные команды */
-      var isReset = /сброс|начать заново|начни заново|заново|исходн|с нуля|обнули/.test(t);
+      /* служебные команды. «заново» само по себе — просьба о новом варианте,
+       * полный сброс — только явные «начать заново»/«сброс»/«с нуля» */
+      var isReset = /сброс|начать заново|начни(те)? заново|начнем заново|все заново|исходн|с нуля|обнули/.test(t);
       if (isReset) add({ type: 'reset' });
       else if (/отмен|верни(те)?[^а-яa-z,]*как было|верни, как было|убери последн|шаг назад|откат/.test(t)) add({ type: 'undo' });
 
-      if ((/вариант/.test(t) && /друг|еще|нов|альтернатив/.test(t)) || /перегенер/.test(t)) add({ type: 'variant' });
+      var isUndoOrReset = intents.length > 0;
+
+      if ((/вариант/.test(t) && /друг|еще|нов|альтернатив/.test(t)) || /перегенер|перерисуй/.test(t)
+        || (/заново/.test(t) && !isReset)) add({ type: 'variant' });
 
       if (/скач/.test(t) || (/сохран/.test(t) && !/планировк/.test(t))) add({ type: 'download' });
 
@@ -195,15 +249,16 @@ window.SL = window.SL || {};
       var styleId = findStyle(t);
       if (styleId) add({ type: 'style', styleId: styleId });
 
-      /* товары: «где купить…», «покажи ссылки/товары/мебель», «магазин» */
+      /* товары: «где купить…», «покажи ссылки/товары/мебель», «покажи диваны» */
+      var itemsAll = findItems(t);
       var wantsProducts = /товар|мебел|магазин|shop|ссылк|покупк/.test(t)
         || /где куп/.test(t)
-        || new RegExp(B + '(куплю|купить|купи)([^а-яa-z]|$)').test(t);
+        || new RegExp(B + '(куплю|купить|купи)([^а-яa-z]|$)').test(t)
+        || (/покаж|подбер|найди|найдешь|посовет|предлож/.test(t) && itemsAll.length > 0);
       if (wantsProducts) {
-        var items = findItems(t);
-        var pColor = findColor(t);
         var p = { type: 'products' };
-        if (items.length) p.items = items;
+        if (itemsAll.length) p.items = itemsAll;
+        var pColor = findColor(t);
         if (pColor) p.color = pColor;
         add(p);
       }
@@ -225,31 +280,69 @@ window.SL = window.SL || {};
       if (/насыщенн|сочн/.test(t)) add({ type: 'adjust', param: 'saturation', delta: 0.15, label: 'Цвет: сочнее' });
       else if (/пастельн|спокойн|блекл/.test(t)) add({ type: 'adjust', param: 'saturation', delta: -0.15, label: 'Цвет: пастельнее' });
 
+      var negs = negPositions(t);
+
       /* растения: «растения», «цветы», «зелень» — но не «цвет…» и не цвет «зелёный» */
       var wantsPlants = !wantsProducts && (hasGreenery(t) || hasFlowers(t));
-      if (wantsPlants) add({ type: 'plants', label: 'Растения: добавлены' });
+      if (wantsPlants) {
+        if (negs.length) add({ type: 'remove', what: 'plants', label: 'Растения: убраны' });
+        else add({ type: 'plants', label: 'Растения: добавлены' });
+      }
 
-      /* перекраска зон: цвет + мишень / местоимение / контекст */
-      if (!wantsProducts) {
-        var color = findColor(t);
-        var targets = findTargets(t);
+      /* перекраска зон: цвета + мишени с позициями, отрицания, пары «мишень+цвет».
+       * В комбинированной фразе («сделай ковёр синим и покажи где купить»)
+       * перекраска не глушится товарным интентом — нужен только явный глагол. */
+      var paintAllowed = !wantsProducts || /сдела|перекрас|покрас|выкрас|давай|пусть|остав/.test(t);
+      if (paintAllowed && !isUndoOrReset) {
+        var colors = findColorsAll(t);
+        var targetsPos = findTargetsPos(t);
+        var targets = targetsPos.map(function (f) { return f.id; });
 
-        if (color) {
+        function labelFor(tg, colName) {
+          return (tg === 'all' ? 'Вся сцена' : SL.TARGETS[tg].label) + ': ' + colName;
+        }
+        function addPaint(tg, col, negated) {
+          if (negated) {
+            add({ type: 'remove', target: tg === 'all' ? null : tg, colorName: col.name });
+          } else {
+            add({ type: 'recolor', target: tg, hex: col.hex, colorName: col.name, label: labelFor(tg, col.name) });
+          }
+        }
+
+        if (colors.length >= 2 && targetsPos.length) {
+          /* несколько цветов: каждому — ближайшая свободная мишень */
+          var used = {};
+          for (var ci = 0; ci < colors.length; ci++) {
+            var bestT = null, bestD = Infinity;
+            for (var ti = 0; ti < targetsPos.length; ti++) {
+              if (used[targetsPos[ti].id]) continue;
+              /* по-русски цвет обычно идёт после мишени («потолок белым»),
+               * поэтому мишень ПЕРЕД цветом ближе, чем следующая за ним */
+              var dd = colors[ci].pos - targetsPos[ti].pos;
+              if (dd < 0) dd = -dd * 1.5;
+              if (dd < bestD) { bestD = dd; bestT = targetsPos[ti]; }
+            }
+            if (bestT) {
+              used[bestT.id] = 1;
+              addPaint(bestT.id, colors[ci], isNegated(negs, colors[ci].pos));
+            }
+          }
+          ctx.lastTarget = targetsPos[0].id;
+          ctx.lastColor = colors[0];
+        } else if (colors.length) {
+          var color = colors[0];
+          var negd = isNegated(negs, color.pos);
           if (targets.length) {
-            targets.forEach(function (tg) {
-              add({ type: 'recolor', target: tg, hex: color.hex, colorName: color.name,
-                    label: SL.TARGETS[tg].label + ': ' + color.name });
-            });
+            targets.forEach(function (tg) { addPaint(tg, color, negd); });
             ctx.lastTarget = targets[0];
             ctx.lastColor = color;
           } else if (!wantsPlants) {
-            /* цвет без мишени: местоимение или последняя мишень из контекста, иначе весь кадр */
-            var tg2 = (hasPronoun(t) && ctx.lastTarget) ? ctx.lastTarget : (ctx.lastTarget || 'all');
-            var lbl = tg2 === 'all' ? 'Вся сцена: ' + color.name : SL.TARGETS[tg2].label + ': ' + color.name;
-            add({ type: 'recolor', target: tg2, hex: color.hex, colorName: color.name, label: lbl });
+            /* цвет без мишени: последняя мишень из контекста, иначе весь кадр */
+            var tg2 = ctx.lastTarget || 'all';
+            addPaint(tg2, color, negd);
             ctx.lastColor = color;
           }
-        } else if (targets.length) {
+        } else if (targets.length && !wantsProducts) {
           ctx.lastTarget = targets[0]; /* запоминаем: следующий «синий» ляжет сюда */
           if (!intents.length) add({ type: 'help', ask: 'color', target: targets[0] });
         }
@@ -263,15 +356,14 @@ window.SL = window.SL || {};
     replyFor: function (action, state) {
       var a = action || {};
       var st = state || {};
-      var style = a.styleId ? SL.styleById(a.styleId)
-        : (st.style || SL.styleById(st.styleId || (SL.app && SL.app.state && SL.app.state.styleId)));
+      var style = a.styleId ? SL.styleById(a.styleId) : (st.style || SL.styleById(st.styleId));
       var sName = style ? style.name : 'выбранный стиль';
       var key = (a.text || '') + '|' + (a.type || '') + '|' + (a.target || '') + (a.colorName || '') + (a.param || '') + (a.styleId || '');
       function v(arr) { return arr[hash(key) % arr.length]; }
 
       var tdef = a.target && SL.TARGETS[a.target];
-      var noun = tdef ? tdef.acc : 'всё вокруг';
-      var nounCap = noun.charAt(0).toUpperCase() + noun.slice(1);
+      var noun = tdef ? tdef.acc : 'всю сцену';
+      var nounCap = tdef ? (noun.charAt(0).toUpperCase() + noun.slice(1)) : 'Вся сцена';
       var col = a.colorName || '';
       var html, chips;
 
@@ -286,8 +378,37 @@ window.SL = window.SL || {};
           ]);
           break;
 
+        case 'remove':
+          if (a.nothing) {
+            html = v([
+              'Не нашла такой правки — снимать нечего, всё и так в исходном виде.',
+              'Похоже, этого цвета в правках нет. Скажите «отмени», чтобы снять последнюю правку.',
+              'Такой перекраски не было — убирать нечего.'
+            ]);
+          } else if (a.what === 'plants') {
+            html = v([
+              'Убрала растения — кадр снова без зелени.',
+              'Зелень сняла. Захотите вернуть — скажите «добавь растения».'
+            ]);
+          } else {
+            html = v([
+              'Убрала ' + esc(a.colorName || 'этот цвет') + (tdef ? ' с зоны «' + esc(noun) + '»' : '') + ' — вернула прежний вид.',
+              'Сняла перекраску' + (a.colorName ? ' в ' + esc(a.colorName) : '') + '. Планировка и остальные правки на месте.',
+              'Готово, без ' + esc(a.colorName || 'этого цвета') + ' — зона вернулась к прежнему оттенку.'
+            ]);
+          }
+          break;
+
         case 'adjust': {
           var plus = (a.delta || 0) >= 0;
+          if (a.capped) {
+            html = v([
+              'Этот параметр уже на пределе — дальше двигать некуда, кадр не изменится.',
+              'Максимум достигнут: сильнее уже не сделать. Могу повести в другую сторону.',
+              'Дошли до упора по этому параметру — оставила как есть.'
+            ]);
+            break;
+          }
           if (a.param === 'warmth') html = plus ? v([
             'Добавила тепла в свет — «' + esc(sName) + '» зазвучал уютнее.',
             'Сделала свет теплее, как от вечерних ламп. Планировка не тронута.',
@@ -357,11 +478,19 @@ window.SL = window.SL || {};
           break;
 
         case 'undo':
-          html = v([
-            'Вернула как было — последняя правка снята.',
-            'Откатила последний шаг. Всё остальное на месте.',
-            'Убрала последнее изменение — смотрим предыдущую версию.'
-          ]);
+          if (a.empty) {
+            html = v([
+              'Пока нечего отменять — правок ещё не было, перед вами чистая подача стиля.',
+              'История правок пуста: всё и так в исходном виде.',
+              'Отменять нечего — ни одной правки ещё не внесено.'
+            ]);
+          } else {
+            html = v([
+              'Вернула как было — последняя правка снята.',
+              'Откатила последний шаг. Всё остальное на месте.',
+              'Убрала последнее изменение — смотрим предыдущую версию.'
+            ]);
+          }
           break;
 
         case 'reset':
@@ -381,11 +510,18 @@ window.SL = window.SL || {};
           break;
 
         case 'download':
-          html = v([
-            'Сохраняю кадр в PNG — заберите его в загрузках.',
-            'Готово, файл ушёл в загрузки. Отличный кадр для мудборда.',
-            'Скачала для вас текущий результат в PNG.'
-          ]);
+          if (a.failed) {
+            html = v([
+              'Пока нечего сохранять — рендер ещё не готов. Загрузите фото и попробуйте снова.',
+              'Не вижу готового кадра для сохранения. Сначала загрузим фото комнаты?'
+            ]);
+          } else {
+            html = v([
+              'Сохраняю кадр в PNG — заберите его в загрузках.',
+              'Готово, файл ушёл в загрузки. Отличный кадр для мудборда.',
+              'Скачала для вас текущий результат в PNG.'
+            ]);
+          }
           break;
 
         default: /* help */
