@@ -270,7 +270,7 @@ window.SL = window.SL || {};
       function v(arr) { return arr[hash(key) % arr.length]; }
 
       var tdef = a.target && SL.TARGETS[a.target];
-      var noun = tdef ? tdef.acc : 'всю сцену';
+      var noun = tdef ? tdef.acc : 'всё вокруг';
       var nounCap = noun.charAt(0).toUpperCase() + noun.slice(1);
       var col = a.colorName || '';
       var html, chips;
