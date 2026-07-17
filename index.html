@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Southland — AI-дизайнер интерьера</title>
+<meta name="description" content="Загрузите фото комнаты — получите новый интерьер за минуту. Карусель стилей, сравнение до/после и AI-чат с подбором мебели.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-stage="empty">
+
+<!-- 1 · NAVBAR -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <div class="brand">
+      <span class="wordmark goldtext">Southland</span>
+      <span class="tagline">◆ AI-дизайнер интерьера ◆</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#hero">Как это работает</a>
+      <a href="#styles" class="needs-photo">Стили</a>
+      <a href="#chat" class="needs-photo">Консьерж</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 2 · HERO + UPLOAD -->
+<section class="hero" id="hero">
+  <svg class="sunburst" width="900" height="320" viewBox="0 0 900 320" fill="none" aria-hidden="true">
+    <g stroke="#C9A96A" stroke-width="1" opacity=".35">
+      <path d="M450 300 L450 10"/><path d="M450 300 L330 24"/><path d="M450 300 L570 24"/>
+      <path d="M450 300 L220 60"/><path d="M450 300 L680 60"/>
+      <path d="M450 300 L120 130"/><path d="M450 300 L780 130"/>
+      <path d="M450 300 L60 220"/><path d="M450 300 L840 220"/>
+    </g>
+    <circle cx="450" cy="300" r="70" stroke="#C9A96A" opacity=".4"/>
+    <circle cx="450" cy="300" r="100" stroke="#C9A96A" opacity=".22"/>
+    <circle cx="450" cy="300" r="140" stroke="#C9A96A" opacity=".12"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow">Премиальная студия дизайна</div>
+    <h1>Загрузите фото — <br><span class="goldtext">получите новый интерьер</span><br> за минуту</h1>
+    <p class="sub">Искусственный интеллект перерисует вашу комнату в выбранном стиле — с точностью до планировки и роскошью до мелочей.</p>
+
+    <div class="upload corners" id="dropzone"><i></i><i></i><i></i><i></i>
+      <div class="upload-inner">
+        <div class="up-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#C9A96A" stroke-width="1.4">
+            <path d="M13 19 V5 M13 5 L7.5 10.5 M13 5 L18.5 10.5"/>
+            <path d="M4 19 v3 h18 v-3"/>
+          </svg>
+        </div>
+        <div class="disp">Перетащите фото комнаты сюда</div>
+        <div class="up-note">JPG, PNG или WEBP · до 20 МБ · фото не покидает ваш браузер</div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <button class="btn btn-solid" id="btnChoose" type="button">Выбрать файл</button>
+        <button class="demo-link" id="btnDemo" type="button">или попробуйте демо-комнату</button>
+      </div>
+    </div>
+
+    <div class="steps" aria-hidden="true">
+      <div class="step"><span class="step-n"><span>I</span></span><b>Фото</b></div>
+      <span class="step-arr">— ◆ —</span>
+      <div class="step"><span class="step-n"><span>II</span></span><b>Стиль</b></div>
+      <span class="step-arr">— ◆ —</span>
+      <div class="step"><span class="step-n"><span>III</span></span><b>Результат</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========= STUDIO (появляется после загрузки фото) ========= -->
+<div id="studio">
+
+  <!-- 3 · STYLE CAROUSEL -->
+  <section class="section" id="styles">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sep">◆</div>
+        <h2 class="sec-title">Выберите стиль</h2>
+        <p class="sec-sub">Восемь кураторских направлений — AI примерит каждое на вашу комнату</p>
+      </div>
+      <div class="car">
+        <button class="car-btn car-prev" id="carPrev" aria-label="Назад" type="button">‹</button>
+        <button class="car-btn car-next" id="carNext" aria-label="Вперёд" type="button">›</button>
+        <div class="car-track" id="styleTrack" role="listbox" aria-label="Стили интерьера"></div>
+        <div class="car-dots" id="carDots" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · COMPARE SLIDER -->
+  <section class="section" id="result">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sep">◆</div>
+        <h2 class="sec-title">До <span class="gold">◆</span> После</h2>
+        <p class="sec-sub">Потяните разделитель — планировка та же, меняется только настроение</p>
+      </div>
+      <div class="cmp-shell frame2">
+        <div class="compare" id="cmp" style="--split:55%">
+          <canvas class="scene" id="cvBefore" width="1280" height="800" aria-label="Оригинал комнаты"></canvas>
+          <div class="after-wrap">
+            <canvas class="scene" id="cvAfter" width="1280" height="800" aria-label="AI-дизайн комнаты"></canvas>
+          </div>
+          <span class="cmp-label l">Оригинал</span>
+          <span class="cmp-label r">AI-дизайн</span>
+          <div class="divider" aria-hidden="true"><div class="grip">◀&nbsp;▶</div></div>
+          <input class="split-range" id="splitRange" type="range" min="4" max="96" value="55" step="0.5" aria-label="Сравнение до и после">
+          <div class="render-veil" id="renderVeil" aria-hidden="true"><span>◆ Перерисовываю…</span></div>
+        </div>
+        <div class="cmp-caption">
+          <div class="style-now"><b id="styleNowName">◆ —</b><span id="styleNowTag"></span></div>
+          <div class="cmp-actions">
+            <button class="btn btn-solid btn-sm" id="btnDownload" type="button">Скачать</button>
+            <button class="btn btn-sm" id="btnShare" type="button">Поделиться</button>
+            <button class="btn btn-sm" id="btnVariant" type="button">Другой вариант</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · CHAT REFINEMENT -->
+  <section class="section" id="chat">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sep">◆</div>
+        <h2 class="sec-title">Уточните дизайн в чате</h2>
+        <p class="sec-sub">Личный AI-консьерж вносит правки мгновенно — и подбирает мебель под результат</p>
+      </div>
+      <div class="chat-shell frame2 corners"><i></i><i></i><i></i><i></i>
+        <div class="chat-head">◆ &nbsp;Консьерж Southland&nbsp; ◆</div>
+        <div class="chat-body" id="chatBody" aria-live="polite"></div>
+        <form class="chat-input" id="chatForm">
+          <input class="field" id="chatInput" type="text" autocomplete="off"
+                 placeholder="Например: сделай стены светлее…" aria-label="Сообщение консьержу">
+          <button class="send" type="submit" aria-label="Отправить">➤</button>
+        </form>
+        <div class="qchips">
+          <button class="qchip" type="button" data-msg="Сделай ковёр синим">Ковёр — синий</button>
+          <button class="qchip" type="button" data-msg="Сделай свет теплее">Теплее свет</button>
+          <button class="qchip" type="button" data-msg="Добавь растения">Добавить растения</button>
+          <button class="qchip" type="button" data-msg="Покажи товары">Показать товары</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /studio -->
+
+<!-- 6 · FOOTER -->
+<footer class="footer">
+  <div class="wrap foot-in">
+    <span>© Southland 2026 &nbsp;◆&nbsp; AI-дизайнер интерьера</span>
+    <span class="foot-links"><a href="#hero">Наверх</a><a href="mailto:info@southland.uz">Поддержка</a></span>
+  </div>
+</footer>
+
+<!-- Оверлей анализа фото -->
+<div class="overlay" id="overlay" role="status" aria-live="polite">
+  <div class="ov-card frame2 corners"><i></i><i></i><i></i><i></i>
+    <div class="ov-spin" aria-hidden="true"><span>◆</span></div>
+    <div class="ov-text" id="overlayText">Определяю планировку…</div>
+    <div class="ov-bar"><i id="overlayBar"></i></div>
+  </div>
+</div>
+
+<script src="js/styles.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/demo-room.js"></script>
+<script src="js/compare.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
